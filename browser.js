@@ -124,19 +124,15 @@ var BrowserTabs = (function() {
     waitForUV(function() {
       if (typeof registerSW === 'function') {
         var timedOut = false;
-        var to = setTimeout(function() { timedOut = true; finish(); }, 2500);
+        var to = setTimeout(function() { timedOut = true; finish(); }, 400);
         Promise.resolve()
           .then(function() { return registerSW(); })
           .catch(function() {})
           .then(function() {
             if (!timedOut) {
               clearTimeout(to);
-              // Small extra beat so controller is attached
-              return new Promise(function(r) { setTimeout(r, 150); });
+              finish();
             }
-          })
-          .then(function() {
-            if (!timedOut) finish();
           });
       } else {
         finish();
