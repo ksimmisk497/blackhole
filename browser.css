@@ -431,3 +431,105 @@ html.dizzy-embed #tab-content-area { top: 0 !important; bottom: 0 !important; }
   margin: 0 4px;
   flex-shrink: 0;
 }
+
+/* ── Online users (glowing circle) ─────────────────────────── */
+.bh-online {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #9a9a9a;
+  text-decoration: none;
+  cursor: default;
+  transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.25s;
+}
+.bh-online:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-3px);
+}
+.bh-online svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+.bh-online-ring {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 122, 47, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.bh-online.bh-online-pulse .bh-online-ring {
+  opacity: 1;
+  animation: bhOnlineGlow 2.4s ease-in-out infinite;
+}
+@keyframes bhOnlineGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 122, 47, 0.0), 0 0 8px rgba(255, 122, 47, 0.15);
+    border-color: rgba(255, 122, 47, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 122, 47, 0.12), 0 0 16px rgba(255, 122, 47, 0.4);
+    border-color: rgba(255, 160, 80, 0.7);
+  }
+}
+.bh-online-count {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff7a2f;
+  color: #0a0a0f;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'Open Sans', system-ui, sans-serif;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(255, 122, 47, 0.55);
+  pointer-events: none;
+}
+.bh-online[data-count="unknown"] .bh-online-count {
+  background: #3a3a48;
+  color: #aaa;
+  box-shadow: none;
+  font-size: 11px;
+}
+.bh-online::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(4px);
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(20, 20, 24, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.bh-online:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+@media (max-width: 600px) {
+  .bh-online { width: 40px; height: 40px; }
+}
