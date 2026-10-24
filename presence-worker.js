@@ -1,18 +1,50 @@
 /**
- * Blackhole Presence — Cloudflare Worker
+ * Blackhole Presence — Cloudflare Worker (no KV binding required)
  *
- * Deploy: Cloudflare Dashboard → Workers → Create → paste this file.
- * Then set window.BH_PRESENCE_URL = "https://YOUR_WORKER.workers.dev" in Blackhole
- * (or add a one-line script before presence.js).
+ * Uses the Cache API so counts work across requests without setup.
  *
- * Endpoints:
- *   POST /ping   body: {"id":"bh_xxx"}   → registers presence
+ * Deploy: paste into a Worker → Save & Deploy
+ * URL example: https://presence.weswoodland13.workers.dev
+ *
+ *   POST /ping   body: {"id":"bh_xxx"}
  *   GET  /count  → {"count": N}
  */
-const STALE_MS = 120000; // 2 minutes
+const STALE_MS = 120000; // 2 min
+const CACHE_KEY = "https://bh-presence.internal/state";
+
+async function readState(cache) {
+  try {
+    const res = await cache.match(CACHE_KEY);
+    if (!res) return {};
+    return await res.json();
+  } catch (_) {
+    return {};
+  }
+}
+
+async function writeState(cache, state) {
+  const body = JSON.stringify(state);
+  await cache.put(
+    CACHE_KEY,
+    new Response(body, {
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "max-age=300"
+      }
+    })
+  );
+}
+
+function prune(state, now) {
+  const out = {};
+  for (const [id, t] of Object.entries(state)) {
+    if (typeof t === "number" && now - t < STALE_MS) out[id] = t;
+  }
+  return out;
+}
 
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
     const url = new URL(request.url);
     const cors = {
       "Access-Control-Allow-Origin": "*",
@@ -25,48 +57,33 @@ export default {
       return new Response(null, { headers: cors });
     }
 
-    // Prefer Durable Object if bound as PRESENCE; else fall back to KV "presence"
-    const store = env.PRESENCE_KV || env.presence;
+    const cache = caches.default;
+    const now = Date.now();
 
     if (url.pathname === "/ping" && request.method === "POST") {
-      let id = "anon";
+      let id = "anon_" + Math.random().toString(36).slice(2, 10);
       try {
         const body = await request.json();
-        if (body && typeof body.id === "string" && body.id.length < 80) id = body.id;
+        if (body && typeof body.id === "string" && body.id.length > 2 && body.id.length < 80) {
+          id = body.id;
+        }
       } catch (_) {}
 
-      const now = Date.now();
-      if (store && store.put) {
-        // KV: key = id, value = timestamp
-        await store.put(id, String(now), { expirationTtl: Math.ceil(STALE_MS / 1000) + 30 });
-      } else {
-        // In-memory fallback (single isolate — good enough for low traffic)
-        globalThis.__bh = globalThis.__bh || new Map();
-        globalThis.__bh.set(id, now);
-      }
-      return new Response(JSON.stringify({ ok: true }), {
+      let state = await readState(cache);
+      state = prune(state, now);
+      state[id] = now;
+      await writeState(cache, state);
+
+      return new Response(JSON.stringify({ ok: true, count: Object.keys(state).length }), {
         headers: { ...cors, "content-type": "application/json" }
       });
     }
 
     if (url.pathname === "/count" && request.method === "GET") {
-      let count = 0;
-      const now = Date.now();
-
-      if (store && store.list) {
-        const listed = await store.list({ limit: 1000 });
-        for (const k of listed.keys) {
-          const v = await store.get(k.name);
-          const t = parseInt(v, 10);
-          if (t && now - t < STALE_MS) count++;
-        }
-      } else if (globalThis.__bh) {
-        for (const [id, t] of globalThis.__bh) {
-          if (now - t < STALE_MS) count++;
-          else globalThis.__bh.delete(id);
-        }
-      }
-
+      let state = await readState(cache);
+      state = prune(state, now);
+      await writeState(cache, state);
+      const count = Object.keys(state).length;
       return new Response(JSON.stringify({ count }), {
         headers: { ...cors, "content-type": "application/json" }
       });

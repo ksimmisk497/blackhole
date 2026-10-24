@@ -13,7 +13,7 @@
   var STORAGE_KEY = "bh_presence_id_v1";
   var DEMO_KEY = "bh_presence_demo_v1";
 
-  var endpoint = (typeof window !== "undefined" && window.BH_PRESENCE_URL) || "";
+  var endpoint = (typeof window !== "undefined" && window.BH_PRESENCE_URL) || "https://presence.weswoodland13.workers.dev";
   var id = null;
   var countEl = null;
   var wrapEl = null;
