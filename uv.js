@@ -1,4 +1,4 @@
-// Dizzy UV Service Worker — multi-bare failover + fast activate
+// Blackhole UV Service Worker — multi-bare failover + fast activate
 "use strict";
 
 var _bareIndex = 0;

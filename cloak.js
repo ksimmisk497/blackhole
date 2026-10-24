@@ -2,8 +2,8 @@
 (function () {
   var KEY = "blackhole_cloak_v1";
   var defaults = {
-    title: "Dashboard",
-    favicon: "canvas-favicon.svg",
+    title: "Blackhole",
+    favicon: "favicon.png",
     panicKey: "`",
     panicUrl: "https://canvas.instructure.com/"
   };

@@ -369,7 +369,7 @@ try {
       if (ht) ht.classList.add('active');
       addressInput.value = homeLabel;
       addressInput.classList.add('home-tab');
-      document.title = ((window.BlackholeCloak||window.DizzyCloak) && (window.BlackholeCloak||window.DizzyCloak).load().title) || 'Dashboard';
+      document.title = ((window.BlackholeCloak||window.DizzyCloak) && (window.BlackholeCloak||window.DizzyCloak).load().title) || 'Blackhole';
     } else {
       var tab = tabs.find(function(t) { return t.id === id; });
       if (!tab) return;
@@ -423,7 +423,7 @@ try {
     if (el) el.textContent = title || 'Tab';
     var tab = tabs.find(function(t) { return t.id === id; });
     if (tab) tab.title = title;
-    if (activeTab === id) document.title = ((window.BlackholeCloak||window.DizzyCloak) && (window.BlackholeCloak||window.DizzyCloak).load().title) || 'Dashboard';
+    if (activeTab === id) document.title = ((window.BlackholeCloak||window.DizzyCloak) && (window.BlackholeCloak||window.DizzyCloak).load().title) || 'Blackhole';
   }
 
   function setTabFavicon(id, src) {
