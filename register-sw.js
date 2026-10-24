@@ -1,17 +1,22 @@
 "use strict";
-var __dizzySWReady = null;
+var __bhSWReady = null;
 
 async function registerSW() {
   if (location.protocol === "file:" || location.origin === "null") {
     throw new Error("Open via HTTPS, not a local file.");
   }
-  if (!navigator.serviceWorker || typeof __uv$config === "undefined") return;
-  if (__dizzySWReady) return __dizzySWReady;
+  if (!navigator.serviceWorker) return;
+  if (typeof __uv$config === "undefined") {
+    // Wait briefly for uv.config.js
+    await new Promise(function (r) { setTimeout(r, 100); });
+    if (typeof __uv$config === "undefined") return;
+  }
+  if (__bhSWReady) return __bhSWReady;
 
-  __dizzySWReady = (async function () {
-    var scope = __uv$config.prefix;
-    // Cache-bust the SW URL so stale workers never block proxy startup
-    var swUrl = new URL("uv.js", location.href).href + "?v=" + (Date.now() >> 10);
+  __bhSWReady = (async function () {
+    var scope = __uv$config.prefix || "/service/";
+    // Register root uv.js under the UV prefix scope
+    var swUrl = new URL("/uv.js", location.href).href + "?v=" + (Date.now() >> 8);
     var reg;
 
     try {
@@ -20,7 +25,6 @@ async function registerSW() {
         updateViaCache: "none"
       });
     } catch (err) {
-      // Scope conflict: unregister all workers on this origin and retry once
       var regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(function (r) { return r.unregister(); }));
       reg = await navigator.serviceWorker.register(swUrl, {
@@ -29,7 +33,6 @@ async function registerSW() {
       });
     }
 
-    // Force the new SW active immediately — don't wait for old tabs to close
     if (reg.waiting) {
       reg.waiting.postMessage({ type: "SKIP_WAITING" });
     }
@@ -37,24 +40,33 @@ async function registerSW() {
     if (!reg.active) {
       await Promise.race([
         new Promise(function (resolve) {
-          var sw = reg.installing || reg.waiting;
-          if (!sw) return resolve();
-          sw.addEventListener("statechange", function () {
-            if (sw.state === "activated" || sw.state === "redundant") resolve();
+          var s = reg.installing || reg.waiting;
+          if (!s) return resolve();
+          s.addEventListener("statechange", function () {
+            if (s.state === "activated" || s.state === "redundant") resolve();
           });
         }),
-        new Promise(function (r) { setTimeout(r, 600); })
+        new Promise(function (r) { setTimeout(r, 800); })
       ]);
     }
 
-    // Background update check — never blocks first load
+    // Ensure controller is ready
+    if (!navigator.serviceWorker.controller) {
+      await Promise.race([
+        new Promise(function (resolve) {
+          navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+        }),
+        new Promise(function (r) { setTimeout(r, 500); })
+      ]);
+    }
+
     reg.update().catch(function () {});
   })();
 
   try {
-    await __dizzySWReady;
+    await __bhSWReady;
   } catch (e) {
-    __dizzySWReady = null;
+    __bhSWReady = null;
     throw e;
   }
 }

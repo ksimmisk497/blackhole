@@ -1,4 +1,4 @@
-// Dizzy UV Service Worker — multi-bare failover + fast activate
+// Blackhole UV Service Worker — multi-bare failover + fast activate
 "use strict";
 
 var _bareIndex = 0;
@@ -9,57 +9,72 @@ function getBase() {
   return p;
 }
 var base = getBase();
-function u(p) { return base + p; }
+function u(p) {
+  if (p.charAt(0) === "/") return p;
+  return base + "/" + p;
+}
 
-importScripts(u("/uv/uv.bundle.js"));
-importScripts(u("/uv/uv.config.js"));
-importScripts(u("/uv/uv.sw.js"));
+importScripts("/uv/uv.bundle.js");
+importScripts("/uv/uv.config.js");
+importScripts("/uv/uv.sw.js");
 
 var sw = new UVServiceWorker();
 
 // ── Bare server health probe — pick the fastest responding one ──────────────
-var _bareList = null;
 var _barePicked = false;
 
 async function pickBestBare() {
   if (_barePicked) return;
   _barePicked = true;
-  var list = (self.__uv$config && self.__uv$config.bareServers) || [
-    "https://wes-prox.ksimmisk497.workers.dev/",
-    "https://uv.holyubofficial.net/",
-    "https://bare.operand.org/",
-    "https://bareserver.r58playz.dev/"
-  ];
-  _bareList = list;
+  var list = (self.__uv$config && self.__uv$config.bare) || [];
+  if (!Array.isArray(list)) list = [list];
+  if (!list.length) return;
 
-  // Race them — first bare to respond to a HEAD wins
   try {
     var winner = await Promise.any(
       list.map(function (url) {
-        return fetch(url, { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(2500) })
-          .then(function (r) { return r.ok || r.status < 500 ? url : Promise.reject(); });
+        return fetch(url, {
+          method: "OPTIONS",
+          cache: "no-store",
+          mode: "cors",
+          signal: AbortSignal.timeout(2500)
+        }).then(function (r) {
+          if (r.ok || r.status < 500 || r.status === 204) return url;
+          return Promise.reject();
+        });
       })
     );
     if (winner && self.__uv$config) {
       self.__uv$config.bare = winner;
+      // UVServiceWorker may have already bound an address — update if possible
+      try {
+        if (sw && sw.address) sw.address = winner;
+        if (sw && sw.bareClient) {
+          // recreate client against winner when API allows
+        }
+      } catch (e) {}
     }
   } catch (e) {
-    // All failed — stick with primary, UV will surface error to user
+    // All failed — keep first bare
+    if (self.__uv$config && list[0]) self.__uv$config.bare = list[0];
   }
 }
 
 // ── UA persistence ───────────────────────────────────────────────────────────
 async function loadUA() {
   try {
-    var c = await caches.open("dizzy-meta");
+    var c = await caches.open("bh-meta");
     var r = await c.match("/__ua__");
-    if (r) { var t = await r.text(); if (t) _UA = t; }
+    if (r) {
+      var t = await r.text();
+      if (t) _UA = t;
+    }
   } catch (e) {}
 }
 async function storeUA(ua) {
   _UA = ua;
   try {
-    var c = await caches.open("dizzy-meta");
+    var c = await caches.open("bh-meta");
     await c.put("/__ua__", new Response(ua, { headers: { "content-type": "text/plain" } }));
   } catch (e) {}
 }
@@ -73,70 +88,55 @@ self.addEventListener("activate", function (e) {
     Promise.all([
       self.clients.claim(),
       loadUA(),
-      pickBestBare(),           // probe bare servers immediately on activate
-      // Nuke old caches — stale SW is the #1 reason proxy breaks after updates
+      pickBestBare(),
       caches.keys().then(function (keys) {
         return Promise.all(
-          keys.filter(function (k) { return k !== "dizzy-meta"; })
-              .map(function (k) { return caches.delete(k); })
+          keys
+            .filter(function (k) {
+              return k !== "bh-meta";
+            })
+            .map(function (k) {
+              return caches.delete(k);
+            })
         );
       })
     ])
   );
 });
 
-// ── Messages ─────────────────────────────────────────────────────────────────
 self.addEventListener("message", function (e) {
   try {
+    if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
     if (e.data && e.data.type === "DIZZY_UA" && e.data.ua) storeUA(e.data.ua);
+    if (e.data && e.data.type === "BH_UA" && e.data.ua) storeUA(e.data.ua);
   } catch (err) {}
 });
 
-// ── Fetch intercept with UA injection ────────────────────────────────────────
+// Inject a modern UA on outbound proxy fetches when possible
 var _origFetch = self.fetch.bind(self);
 self.fetch = function (input, init) {
   try {
-    var ua = _UA;
-    if (ua) {
-      if (typeof Request !== "undefined" && input instanceof Request) {
-        var h = new Headers(input.headers || {});
-        try {
-          var bh = h.get("x-bare-headers");
-          if (bh) {
-            var obj = JSON.parse(bh);
-            obj["user-agent"] = ua;
-            obj["User-Agent"] = ua;
-            h.set("x-bare-headers", JSON.stringify(obj));
-          }
-        } catch (e2) {}
-        input = new Request(input, { headers: h });
-      } else if (typeof input === "string") {
-        init = init || {};
-        var h2 = new Headers(init.headers || {});
-        try {
-          var bh2 = h2.get("x-bare-headers");
-          if (bh2) {
-            var obj2 = JSON.parse(bh2);
-            obj2["user-agent"] = ua;
-            obj2["User-Agent"] = ua;
-            h2.set("x-bare-headers", JSON.stringify(obj2));
-          }
-        } catch (e3) {}
-        init.headers = h2;
+    if (_UA && init && init.headers) {
+      var h = init.headers;
+      if (h instanceof Headers) {
+        if (!h.has("user-agent")) h.set("user-agent", _UA);
+      } else if (typeof h === "object") {
+        if (!h["user-agent"] && !h["User-Agent"]) h["user-agent"] = _UA;
       }
     }
-  } catch (err) {}
+  } catch (e) {}
   return _origFetch(input, init);
 };
 
-// ── Route proxy requests through UV ─────────────────────────────────────────
+// ── Route proxied traffic through UV ─────────────────────────────────────────
 self.addEventListener("fetch", function (e) {
   var prefix = (self.__uv$config && self.__uv$config.prefix) || "/service/";
   if (e.request.url.indexOf(prefix) === -1) return;
 
-  e.respondWith((async function () {
-    // Ensure bare is picked before first real proxied request
-    if (!_barePicked) await pickBestBare();
-    return sw.fetch(e);
-  })());
+  e.respondWith(
+    (async function () {
+      if (!_barePicked) await pickBestBare();
+      return sw.fetch(e);
+    })()
+  );
 });
