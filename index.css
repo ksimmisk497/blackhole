@@ -56,8 +56,8 @@ html, body {
 
 .form__input::placeholder { color: #6a6a78; }
 .form__input:focus {
-  border-color: #6c7cff;
-  box-shadow: 0 0 0 3px rgba(108,124,255,0.2);
+  border-color: #ff7a2f;
+  box-shadow: 0 0 0 3px rgba(255,122,47,0.2);
 }
 
 #footer {

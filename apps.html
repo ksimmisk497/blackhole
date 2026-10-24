@@ -31,8 +31,8 @@
       transition: border-color .2s, box-shadow .2s, transform .15s;
     }
     .app-card:hover {
-      border-color: rgba(108,124,255,0.55);
-      box-shadow: 0 0 0 3px rgba(108,124,255,0.12), 0 0 24px rgba(108,124,255,0.2);
+      border-color: rgba(255,122,47,0.55);
+      box-shadow: 0 0 0 3px rgba(255,122,47,0.12), 0 0 24px rgba(255,122,47,0.2);
       transform: translateY(-2px);
       color: #fff;
     }
@@ -153,7 +153,7 @@
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     var dots = [];
-    var colors = ['#8b7cf7', '#6c7cff', '#a78bfa', '#c4b5fd'];
+    var colors = ['#ff7a2f', '#ff7a2f', '#ffb347', '#ffd4a8'];
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -188,7 +188,7 @@
           var d = Math.sqrt(dx * dx + dy * dy);
           if (d < 140) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(108,124,255,' + (0.28 * (1 - d / 140)).toFixed(3) + ')';
+            ctx.strokeStyle = 'rgba(255,122,47,' + (0.28 * (1 - d / 140)).toFixed(3) + ')';
             ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
           }
         }
