@@ -2,17 +2,21 @@
 (function () {
   var KEY = "blackhole_cloak_v1";
   var defaults = {
-    title: "Dashboard",
-    favicon: "canvas-favicon.svg",
+    title: "Blackhole",
+    favicon: "favicon.png",
     panicKey: "`",
     panicUrl: "https://canvas.instructure.com/"
   };
 
   function load() {
     try {
-      return Object.assign({}, defaults, JSON.parse(
+      var cfg = Object.assign({}, defaults, JSON.parse(
         localStorage.getItem(KEY) || localStorage.getItem("dizzy_cloak_v1") || "{}"
       ));
+      // Migrate old default title/favicon to Blackhole branding
+      if (!cfg.title || cfg.title === "Dashboard") cfg.title = defaults.title;
+      if (!cfg.favicon || cfg.favicon === "canvas-favicon.svg") cfg.favicon = defaults.favicon;
+      return cfg;
     } catch (e) {
       return Object.assign({}, defaults);
     }
