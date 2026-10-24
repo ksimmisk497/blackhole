@@ -94,21 +94,43 @@ var BrowserTabs = (function() {
 
   function genId() { return 'tab_' + Math.random().toString(36).slice(2,8); }
 
+  // SW ready cache — first search may wait briefly; later searches are instant
+  var _swReady = false;
+  var _swPromise = null;
+
   function waitForUV(cb) {
     if (typeof __uv$config !== 'undefined') { cb(); return; }
     var t = 0;
     var iv = setInterval(function() {
-      t += 60;
+      t += 40;
       if (typeof __uv$config !== 'undefined') { clearInterval(iv); cb(); }
-      else if (t > 5000) clearInterval(iv);
-    }, 60);
+      else if (t > 2000) { clearInterval(iv); cb(); }
+    }, 40);
+  }
+
+  function ensureSW() {
+    if (_swReady) return Promise.resolve();
+    if (_swPromise) return _swPromise;
+    if (typeof registerSW !== 'function') {
+      _swReady = true;
+      return Promise.resolve();
+    }
+    // Already controlled by an active worker — treat as ready
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      _swReady = true;
+      return Promise.resolve();
+    }
+    _swPromise = Promise.resolve()
+      .then(function () { return registerSW(); })
+      .catch(function () {})
+      .then(function () { _swReady = true; _swPromise = null; });
+    return _swPromise;
   }
 
   function encodeURL(raw, cb) {
     function finish() {
       try {
         if (typeof __uv$config === 'undefined' || !__uv$config.encodeUrl) {
-
           var template = 'https://duckduckgo.com/?q=%s';
           var url = typeof search === 'function' ? search(raw, template) : raw;
           cb(url);
@@ -121,22 +143,25 @@ var BrowserTabs = (function() {
         cb('https://duckduckgo.com/?q=' + encodeURIComponent(raw));
       }
     }
-    waitForUV(function() {
-      if (typeof registerSW === 'function') {
-        var timedOut = false;
-        var to = setTimeout(function() { timedOut = true; finish(); }, 400);
-        Promise.resolve()
-          .then(function() { return registerSW(); })
-          .catch(function() {})
-          .then(function() {
-            if (!timedOut) {
-              clearTimeout(to);
-              finish();
-            }
-          });
-      } else {
+    waitForUV(function () {
+      // Fast path: SW already ready
+      if (_swReady || (navigator.serviceWorker && navigator.serviceWorker.controller)) {
+        _swReady = true;
         finish();
+        return;
       }
+      // First search only: wait for SW, cap at 700ms so it never hangs
+      var timedOut = false;
+      var to = setTimeout(function () {
+        timedOut = true;
+        finish();
+      }, 700);
+      ensureSW().then(function () {
+        if (!timedOut) {
+          clearTimeout(to);
+          finish();
+        }
+      });
     });
   }
 

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Blackhole AI</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/svg+xml" href="canvas-favicon.svg">
+  <link rel="preconnect" href="https://wes-prox.ksimmisk497.workers.dev" crossorigin>
+  <link rel="preconnect" href="https://wes-prox.ksimmisk497.workers.dev" crossorigin>
+  <link rel="preload" href="uv/uv.bundle.js" as="script">
+  <link rel="stylesheet" href="fonts/local.css">
+  <link rel="stylesheet" href="browser.css">
+  <script src="cloak.js"></script>
+  <script src="notifications.js"></script>
+  <script src="browser-ua.js"></script>
+<style>
+
+  #home-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 80px;
+  }
+
+  #home-logo {
+    height: 72px;
+    width: auto;
+    max-width: min(420px, 88vw);
+    margin-bottom: 22px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 28px rgba(255,100,30,0.45));
+    animation: logoFloat 5s ease-in-out infinite;
+  }
+
+  #home-title {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 28px;
+  }
+
+  #home-form {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  #home-search {
+    padding: 14px 22px;
+    border: 1px solid rgba(255, 122, 47, 0.35);
+    border-radius: 12px;
+    font-size: 15px;
+    width: min(400px, 92vw);
+    background: rgba(20, 20, 28, 0.85);
+    color: #fff;
+    text-align: center;
+    outline: none;
+    font-family: 'Open Sans', sans-serif;
+    transition: border-color .2s, box-shadow .25s, background .2s;
+    box-shadow:
+      0 0 0 1px rgba(255, 122, 47, 0.08),
+      0 0 24px rgba(255, 122, 47, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  #home-search::placeholder {
+    color: #9a9aab;
+  }
+
+  #home-search:focus {
+    border-color: rgba(255, 180, 80, 0.7);
+    background: rgba(22, 22, 34, 0.95);
+    box-shadow:
+      0 0 0 3px rgba(255, 122, 47, 0.18),
+      0 0 36px rgba(255, 122, 47, 0.22),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  #home-error {
+    color: #f66;
+    font-size: 13px;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  /* Quick circles */
+  #quick-links {
+    display: flex;
+    justify-content: center;
+    gap: 36px;
+    padding: 28px 20px 12px;
+    flex-wrap: wrap;
+  }
+
+  .quick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #b0b0c0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    font-family: 'Open Sans', sans-serif;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color .2s, transform .2s;
+  }
+
+  .quick-btn:hover {
+    color: #e8e8ff;
+    transform: translateY(-2px);
+  }
+
+  .quick-btn:hover .quick-circle {
+    transform: scale(1.08);
+    border-color: rgba(255, 180, 80, 0.75);
+    box-shadow:
+      0 0 0 3px rgba(255, 122, 47, 0.15),
+      0 0 22px rgba(255, 122, 47, 0.35),
+      0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .quick-circle {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: rgba(20, 20, 28, 0.9);
+    border: 1px solid rgba(255, 122, 47, 0.22);
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .25s, transform .2s;
+  }
+
+  .quick-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #14141c;
+    border: 1px solid #2a2a35;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s;
+  }
+
+  .quick-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #site-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 50;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 12px;
+    color: #555;
+    background: #0a0a0f;
+    border-top: 1px solid #1c1c28;
+    pointer-events: none;
+  }
+
+  #home-inner { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+  #home-logo {
+    filter: drop-shadow(0 0 32px rgba(255,122,47,0.45)) drop-shadow(0 0 60px rgba(255,80,20,0.35));
+    animation: logoFloat 5s ease-in-out infinite;
+  }
+  @keyframes logoFloat {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  #home-search {
+    border-color: rgba(255,122,47,0.4) !important;
+    background: rgba(8,6,14,0.7) !important;
+    backdrop-filter: blur(12px);
+  }
+  #home-search:focus {
+    border-color: rgba(255,180,80,0.85) !important;
+    box-shadow: 0 0 0 3px rgba(255,122,47,0.25), 0 0 40px rgba(255,122,47,0.2) !important;
+  }
+  .quick-btn { color: #c4c4c4 !important; }
+  .quick-circle {
+    border-color: rgba(255,122,47,0.35) !important;
+    background: rgba(8,6,14,0.75) !important;
+  }
+
+
+  /* Orange snake border around search */
+  @property --snake-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+  #home-form {
+    position: relative;
+    width: min(400px, 92vw);
+    margin: 0 auto 6px;
+    border-radius: 14px;
+    padding: 2px;
+    background: #000;
+    isolation: isolate;
+  }
+  #home-form::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--snake-angle),
+      transparent 0deg,
+      transparent 300deg,
+      rgba(255, 90, 20, 0.15) 320deg,
+      #ff5a14 340deg,
+      #ffb347 350deg,
+      #ffe0a0 355deg,
+      #ff5a14 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: snake-spin 2.4s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #home-form::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--snake-angle),
+      transparent 0deg,
+      transparent 310deg,
+      rgba(255, 180, 80, 0.0) 325deg,
+      rgba(255, 179, 71, 0.55) 345deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    filter: blur(4px);
+    animation: snake-spin 2.4s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.9;
+  }
+  @keyframes snake-spin {
+    to { --snake-angle: 360deg; }
+  }
+  #home-search {
+    position: relative;
+    z-index: 1;
+    width: 100% !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+    background: rgba(0, 0, 0, 0.82) !important;
+  }
+  #home-search:focus {
+    border-color: rgba(255, 122, 47, 0.25) !important;
+    box-shadow: none !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+  }
+
+  /* Force orange shortcuts */
+
+  .quick-btn { color: #c4c4c4 !important; }
+  .quick-circle {
+    border-color: rgba(255,122,47,0.45) !important;
+    background: rgba(0,0,0,0.8) !important;
+    box-shadow: 0 0 12px rgba(255,122,47,0.2) !important;
+  }
+  .quick-btn:hover .quick-circle {
+    border-color: rgba(255,180,80,0.9) !important;
+    box-shadow: 0 0 0 3px rgba(255,122,47,0.2), 0 0 24px rgba(255,122,47,0.4) !important;
+  }
+
+</style>
+
+  <script>
+    (function () {
+      var embed = /(?:\?|&)embed=1(?:&|$)/.test(location.search) || window !== window.top;
+      if (!embed) return;
+      document.documentElement.classList.add('blackhole-embed');
+      function hideChrome() {
+        var chrome = document.getElementById('browser-chrome');
+        var spacer = document.getElementById('chrome-height-spacer');
+        var footer = document.getElementById('site-footer');
+        var area = document.getElementById('tab-content-area');
+        if (chrome) chrome.style.display = 'none';
+        if (spacer) spacer.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        if (area) {
+          area.style.top = '0';
+          area.style.bottom = '0';
+        }
+        var home = document.getElementById('home-frame');
+        if (home) home.classList.add('active');
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideChrome);
+      } else hideChrome();
+    })();
+  </script>
+
+
+  <script>
+    (function () {
+      function desired() {
+        try {
+          var c = JSON.parse(localStorage.getItem('blackhole_cloak_v1') || '{}');
+          return (c && c.title) ? c.title : 'Blackhole';
+        } catch (e) { return 'Blackhole'; }
+      }
+      document.title = desired();
+      setInterval(function () {
+        var d = desired();
+        if (document.title !== d) document.title = d;
+      }, 1500);
+    })();
+  </script>
+
+</head>
+<body>
+  <div id="bh-bg" aria-hidden="true">
+    <img src="bg-blackhole.webp" alt="" decoding="async">
+  </div>
+  <div id="browser-chrome">
+    <div id="tab-bar">
+      <div class="tab active" data-tab="ai">
+        <img class="tab-favicon" src="favicon.png" onerror="this.style.display='none'">
+        <span class="tab-title">AI</span>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #ai-frame-wrap {
+      position: fixed;
+      top: 84px;
+      left: 0; right: 0;
+      bottom: 72px;
+      z-index: 5;
+    }
+    #ai-frame-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #0a0a0f;
+    }
+    #ai-setup {
+      position: fixed;
+      top: 84px; left: 0; right: 0; bottom: 72px;
+      z-index: 6;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(10,10,15,0.92);
+      color: #ccc;
+      font-family: system-ui, sans-serif;
+    }
+    #ai-setup.show { display: flex; }
+    #ai-setup .card {
+      max-width: 420px;
+      background: #14141c;
+      border: 1px solid #2a2a35;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    #ai-setup h2 { margin: 0 0 8px; color: #ff7a2f; font-size: 18px; }
+    #ai-setup p { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: #999; }
+    #ai-setup input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #2a2a35;
+      background: #0a0a0f;
+      color: #eee;
+      font: inherit;
+      margin-bottom: 12px;
+    }
+    #ai-setup button {
+      background: #ff7a2f;
+      color: #0a0a0f;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #ai-setup .credits { margin-top: 14px; font-size: 11px; color: #666; }
+  </style>
+
+  <div id="ai-frame-wrap">
+    <iframe id="ai-frame" title="Blackhole AI" allow="clipboard-write"></iframe>
+  </div>
+  <div id="ai-setup">
+    <div class="card">
+      <h2>Blackhole AI</h2>
+      <p>Paste your Cloudflare Worker URL (the one running <code>ai-worker.js</code>), then Save.</p>
+      <input id="ai-url" type="url" placeholder="https://blackhole-ai.yourname.workers.dev" />
+      <button type="button" id="ai-save">Save &amp; open chat</button>
+      <div class="credits">Credits to Teo</div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var KEY = "bh_ai_worker_url";
+    var frame = document.getElementById("ai-frame");
+    var setup = document.getElementById("ai-setup");
+    var input = document.getElementById("ai-url");
+    var save = document.getElementById("ai-save");
+
+    function loadUrl() {
+      try { return localStorage.getItem(KEY) || window.BH_AI_URL || ""; } catch (e) { return window.BH_AI_URL || ""; }
+    }
+    function apply(url) {
+      url = (url || "").trim().replace(/\/$/, "");
+      if (!url) {
+        setup.classList.add("show");
+        return;
+      }
+      setup.classList.remove("show");
+      frame.src = url + "/";
+    }
+    save.onclick = function () {
+      var u = input.value.trim().replace(/\/$/, "");
+      if (!u) return;
+      try { localStorage.setItem(KEY, u); } catch (e) {}
+      apply(u);
+    };
+    var existing = loadUrl();
+    if (existing) input.value = existing;
+    apply(existing);
+  })();
+  </script>
+  <nav class="bh-dock" aria-label="Main">
+    <a href="index.html" data-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>
+    </a>
+    <a href="games.html" data-label="Games">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="12" rx="3"/><path d="M8 12h2M7 10v4M16 11h.01M18 13h.01"/></svg>
+    </a>
+    <a href="apps.html" data-label="Apps">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
+    </a>
+    <a href="ai.html" class="active" data-label="AI">
+      <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V6a4 4 0 0 1 4-4z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 14h6"/></svg>
+    </a>
+    <a href="movies.html" data-label="Movies">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h20M2 15h20"/></svg>
+    </a>
+    <a href="settings.html" data-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </a>
+    <span class="bh-dock-sep" aria-hidden="true"></span>
+    <a href="#" class="bh-notify-btn" data-label="Notifications">
+      <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <span class="bh-notify-dot" style="display:none">0</span>
+    </a>
+  </nav>
+
+  <script src="cloak.js"></script>
+  <script src="notifications.js"></script>
+  <script>if (window.BlackholeCloak) BlackholeCloak.apply(BlackholeCloak.load());</script>
+</body>
+</html>

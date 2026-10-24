@@ -147,15 +147,12 @@
         <div class="movies-actions">
           <button type="button" class="movies-btn primary" id="btn-open-breeze">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h20M2 15h20"/></svg>
-            Open Breeze Movies
+            Reopen Breeze
           </button>
-          <a class="movies-btn secondary" href="https://cherri-education.online/#/movies" target="_blank" rel="noopener">
-            Open in new window
-          </a>
-        </div>
+</div>
 
         <p class="movies-note">
-          <strong>Tip:</strong> “Open Breeze Movies” loads the site through your UV proxy tab (recommended). If streams fail, try the new-window link or switch bare servers in Settings.
+          Opening Breeze through the proxy…
         </p>
         <div id="recent-hint"></div>
       </div>
@@ -179,13 +176,15 @@
     var BREEZE_URL = 'https://cherri-education.online/#/movies';
 
     function openBreeze() {
-      var hint = document.getElementById('recent-hint');
       if (window.BrowserTabs && typeof BrowserTabs.openTab === 'function') {
         BrowserTabs.openTab(BREEZE_URL, 'Breeze');
-        if (hint) hint.textContent = 'Opened Breeze in a new tab — use the tab bar above to switch back.';
       } else {
-        window.open(BREEZE_URL, '_blank');
-        if (hint) hint.textContent = 'Opened in a new browser window.';
+        // Fallback only if tabs not ready yet
+        setTimeout(function () {
+          if (window.BrowserTabs && typeof BrowserTabs.openTab === 'function') {
+            BrowserTabs.openTab(BREEZE_URL, 'Breeze');
+          }
+        }, 200);
       }
     }
 
@@ -195,17 +194,15 @@
       var btn = document.getElementById('btn-open-breeze');
       if (btn) btn.addEventListener('click', openBreeze);
 
-      // Auto-open once per session when landing on Movies
-      try {
-        if (!sessionStorage.getItem('bh_movies_auto')) {
-          sessionStorage.setItem('bh_movies_auto', '1');
-          setTimeout(function () {
-            if (window.BrowserTabs && typeof BrowserTabs.openTab === 'function') {
-              openBreeze();
-            }
-          }, 400);
+      // Always auto-open Breeze when you open the Movies tab (proxy tab, not a new window)
+      function tryOpen() {
+        if (window.BrowserTabs && typeof BrowserTabs.openTab === 'function') {
+          openBreeze();
+          return;
         }
-      } catch (e) {}
+        setTimeout(tryOpen, 100);
+      }
+      setTimeout(tryOpen, 150);
     });
   </script>
   <script>
@@ -268,6 +265,10 @@
     <a href="apps.html" data-label="Apps">
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
     </a>
+    <a href="ai.html" data-label="AI">
+      <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V6a4 4 0 0 1 4-4z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 14h6"/></svg>
+    </a>
+
     <a href="movies.html" class="active" data-label="Movies">
       <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h20M2 15h20"/></svg>
     </a>
