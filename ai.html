@@ -1,54 +1,322 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ask AI</title>
-<style>
-  html, body { height: 100%; margin: 0; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #faf9f6; color: #1f1e1b; display: flex; align-items: center; justify-content: center; }
-  #open { background: #c4562f; color: #fff; border: 0; border-radius: 999px; padding: 14px 26px; font: inherit; font-weight: 600; font-size: 17px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Blackhole AI</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/svg+xml" href="canvas-favicon.svg">
+  <link rel="stylesheet" href="fonts/local.css">
+  <link rel="stylesheet" href="browser.css">
+  <script src="cloak.js"></script>
+  <script src="notifications.js"></script>
 
-  /* Dark backdrop. Clicking it closes the popup. */
-  #overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
-  #overlay.show { display: flex; }
+  <style>
+    /* AI page fills the content area between chrome and dock */
+    #ai-frame {
+      position: fixed;
+      top: var(--chrome-h, 88px);
+      left: 0;
+      right: 0;
+      bottom: 60px; /* dock height */
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-  /* The popup box */
-  #popup { position: relative; width: 100%; max-width: 420px; height: 600px; max-height: 100%; background: #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35); overflow: hidden; }
-  #popup iframe { width: 100%; height: 100%; border: 0; display: block; }
-  #close { position: absolute; top: 6px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.08); color: #333; font-size: 20px; line-height: 1; cursor: pointer; z-index: 2; }
-</style>
+    /* Chat UI — dark, matches Blackhole palette */
+    #ai-frame .ai-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,122,47,0.2);
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+    #ai-frame .ai-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ff7a2f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #ai-frame .ai-title svg { width: 18px; height: 18px; }
+    #ai-frame #clear-btn {
+      background: none;
+      border: 1px solid rgba(255,122,47,0.3);
+      color: #888;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    #ai-frame #clear-btn:hover { color: #fff; border-color: rgba(255,122,47,0.7); }
+
+    /* Message log */
+    #ai-log {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0,0,0,0.45);
+    }
+    #ai-log::-webkit-scrollbar { width: 4px; }
+    #ai-log::-webkit-scrollbar-thumb { background: rgba(255,122,47,0.25); border-radius: 4px; }
+
+    .ai-empty {
+      margin: auto;
+      text-align: center;
+      color: #666;
+      max-width: 260px;
+      user-select: none;
+    }
+    .ai-empty h2 { color: #ddd; font-size: 22px; margin: 0 0 8px; }
+    .ai-empty p  { font-size: 14px; line-height: 1.5; }
+
+    .msg {
+      max-width: 82%;
+      padding: 11px 15px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 15px;
+      line-height: 1.55;
+      animation: msgIn .18s ease both;
+    }
+    @keyframes msgIn { from { opacity:0; transform:translateY(6px); } }
+    .msg.user {
+      align-self: flex-end;
+      background: rgba(255,122,47,0.15);
+      border: 1px solid rgba(255,122,47,0.3);
+      color: #f0f0f0;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: rgba(20,20,28,0.9);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e8e8e8;
+    }
+    .msg.err { color: #ff6b6b; }
+
+    /* Thinking dots */
+    .msg.thinking::after {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      animation: dots 1.2s steps(4) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+    }
+
+    /* Input area */
+    #ai-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid rgba(255,122,47,0.15);
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+    #ai-q {
+      flex: 1;
+      resize: none;
+      border: 1px solid rgba(255,122,47,0.3);
+      background: rgba(10,10,15,0.8);
+      color: #f0f0f0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font: inherit;
+      font-size: 15px;
+      max-height: 140px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #ai-q::placeholder { color: #555; }
+    #ai-q:focus {
+      border-color: rgba(255,122,47,0.7);
+      box-shadow: 0 0 0 3px rgba(255,122,47,0.1);
+    }
+    #ai-send {
+      background: #ff7a2f;
+      color: #000;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 18px;
+      font: inherit;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    #ai-send:disabled { opacity: .4; cursor: default; }
+    #ai-send:not(:disabled):hover { opacity: .88; transform: translateY(-1px); }
+  </style>
 </head>
 <body>
-  <button id="open" type="button"> Ask AI</button>
 
-  <div id="overlay" aria-hidden="true">
-    <div id="popup" role="dialog" aria-modal="true" aria-label="Ask AI">
-      <button id="close" type="button" aria-label="Close">×</button>
-      <iframe src="" data-src="https://yellow-river-da3c.teokosuge8.workers.dev/" title="Ask AI"></iframe>
+  <div id="bh-bg" aria-hidden="true">
+    <img src="bg-blackhole.webp" alt="" decoding="async" fetchpriority="high">
+  </div>
+
+  <div id="browser-chrome">
+    <div id="tab-bar">
+      <div class="tab active" id="home-tab">
+        <img class="tab-favicon" src="favicon.png" onerror="this.style.display='none'">
+        <span class="tab-title">Blackhole AI</span>
+      </div>
+    </div>
+    <div id="address-bar-row">
+      <button class="nav-btn" id="btn-back"    onclick="history.back()"    title="Back">&#8592;</button>
+      <button class="nav-btn" id="btn-forward" onclick="history.forward()" title="Forward">&#8594;</button>
+      <button class="nav-btn" id="btn-reload"  onclick="location.reload()" title="Reload">&#8635;</button>
+      <input id="address-input" class="home-tab" type="text" value="Blackhole AI" readonly
+             style="cursor:default;opacity:.7">
+      <button class="nav-btn" onclick="location.href='index.html'" title="Home">⌂</button>
     </div>
   </div>
 
-<script>
-  const overlay = document.getElementById("overlay");
-  const frame = overlay.querySelector("iframe");
+  <div id="chrome-height-spacer"></div>
 
-  function openPopup() {
-    if (!frame.src || frame.src === location.href) frame.src = frame.dataset.src; // load on first open
-    overlay.classList.add("show");
-    overlay.setAttribute("aria-hidden", "false");
-  }
-  function closePopup() {
-    overlay.classList.remove("show");
-    overlay.setAttribute("aria-hidden", "true");
-  }
+  <!-- Full-screen AI chat panel -->
+  <div id="ai-frame">
+    <div class="ai-header">
+      <div class="ai-title">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17c-3.86 0-7-3.14-7-7 0-1.72.63-3.3 1.67-4.51L17.51 18.33A6.956 6.956 0 0 1 12 19zm5.33-2.49L6.49 5.67A6.956 6.956 0 0 1 12 5c3.86 0 7 3.14 7 7 0 1.72-.63 3.3-1.67 4.51z" fill="currentColor"/>
+        </svg>
+        Blackhole AI
+      </div>
+      <button id="clear-btn" type="button">New chat</button>
+    </div>
 
-  document.getElementById("open").addEventListener("click", openPopup);
-  document.getElementById("close").addEventListener("click", closePopup);
-  // Close when clicking the dark area outside the popup
-  overlay.addEventListener("click", e => { if (e.target === overlay) closePopup(); });
-  // Close with the Escape key
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closePopup(); });
-</script>
+    <div id="ai-log"></div>
+
+    <div id="ai-input-row">
+      <textarea id="ai-q" rows="1" placeholder="Ask anything…" autofocus></textarea>
+      <button id="ai-send" type="button">Send</button>
+    </div>
+  </div>
+
+  <!-- Bottom dock nav — matches every other page -->
+  <nav class="bh-dock" aria-label="Main">
+    <a href="index.html" data-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>
+    </a>
+    <a href="games.html" data-label="Games">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="12" rx="3"/><path d="M8 12h2M7 10v4M16 11h.01M18 13h.01"/></svg>
+    </a>
+    <a href="apps.html" data-label="Apps">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
+    </a>
+    <a href="ai.html" class="active" data-label="AI">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="10" rx="2"/><line x1="12" y1="8" x2="12" y2="5"/><circle cx="12" cy="4" r="1"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><line x1="9.5" y1="16" x2="14.5" y2="16"/><line x1="5" y1="12" x2="3" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/></svg>
+    </a>
+    <a href="movies.html" data-label="Movies">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h20M2 15h20"/></svg>
+    </a>
+    <a href="settings.html" data-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </a>
+    <span class="bh-dock-sep" aria-hidden="true"></span>
+    <a href="#" class="bh-notify-btn" data-label="Notifications">
+      <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <span class="bh-notify-dot" style="display:none">0</span>
+    </a>
+  </nav>
+
+  <script>
+    // ── AI Chat Logic ──────────────────────────────────────────────
+    const API_URL = "https://blackhole-ai.weswoodland13.workers.dev/";
+
+    const log   = document.getElementById("ai-log");
+    const q     = document.getElementById("ai-q");
+    const send  = document.getElementById("ai-send");
+    let history = [], busy = false;
+
+    function showEmpty() {
+      log.innerHTML = `
+        <div class="ai-empty">
+          <h2>What can I help with?</h2>
+          <p>Ask anything. No sign-in needed.</p>
+        </div>`;
+    }
+
+    function addMsg(role, text, extra) {
+      const empty = log.querySelector(".ai-empty");
+      if (empty) empty.remove();
+      const d = document.createElement("div");
+      d.className = "msg " + role + (extra ? " " + extra : "");
+      d.textContent = text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+      return d;
+    }
+
+    async function ask() {
+      const text = q.value.trim();
+      if (!text || busy) return;
+      busy = true; send.disabled = true;
+      q.value = ""; q.style.height = "auto";
+
+      addMsg("user", text);
+      history.push({ role: "user", content: text });
+
+      const out = addMsg("ai thinking", "Thinking");
+
+      try {
+        const r = await fetch(API_URL + "api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "Request failed.");
+        out.className = "msg ai";
+        out.textContent = data.text;
+        history.push({ role: "assistant", content: data.text });
+      } catch (e) {
+        out.className = "msg ai err";
+        out.textContent = e.message || "Something went wrong. Try again.";
+        out.classList.remove("thinking");
+        history.pop();
+      }
+
+      busy = false; send.disabled = false; q.focus();
+      log.scrollTop = log.scrollHeight;
+    }
+
+    send.addEventListener("click", ask);
+    q.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); }
+    });
+    q.addEventListener("input", () => {
+      q.style.height = "auto";
+      q.style.height = Math.min(q.scrollHeight, 140) + "px";
+    });
+    document.getElementById("clear-btn").onclick = () => {
+      history = [];
+      showEmpty();
+    };
+
+    showEmpty();
+  </script>
+
+  <script src="notifications.js" defer></script>
 </body>
 </html>
