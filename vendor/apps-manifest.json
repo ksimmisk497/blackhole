@@ -1,0 +1,107 @@
+[
+  {
+    "name": "YouTube",
+    "url": "https://www.youtube.com",
+    "logo": "https://icons.duckduckgo.com/ip3/youtube.com.ico"
+  },
+  {
+    "name": "TikTok",
+    "url": "https://www.tiktok.com",
+    "logo": "https://icons.duckduckgo.com/ip3/tiktok.com.ico"
+  },
+  {
+    "name": "Discord",
+    "url": "https://discord.com/app",
+    "logo": "https://icons.duckduckgo.com/ip3/discord.com.ico"
+  },
+  {
+    "name": "Reddit",
+    "url": "https://www.reddit.com",
+    "logo": "https://icons.duckduckgo.com/ip3/reddit.com.ico"
+  },
+  {
+    "name": "Twitch",
+    "url": "https://www.twitch.tv",
+    "logo": "https://icons.duckduckgo.com/ip3/twitch.tv.ico"
+  },
+  {
+    "name": "GitHub",
+    "url": "https://github.com",
+    "logo": "https://icons.duckduckgo.com/ip3/github.com.ico"
+  },
+  {
+    "name": "X",
+    "url": "https://x.com",
+    "logo": "https://icons.duckduckgo.com/ip3/x.com.ico"
+  },
+  {
+    "name": "Instagram",
+    "url": "https://www.instagram.com",
+    "logo": "https://icons.duckduckgo.com/ip3/instagram.com.ico"
+  },
+  {
+    "name": "Pinterest",
+    "url": "https://www.pinterest.com",
+    "logo": "https://icons.duckduckgo.com/ip3/pinterest.com.ico"
+  },
+  {
+    "name": "Wikipedia",
+    "url": "https://www.wikipedia.org",
+    "logo": "https://icons.duckduckgo.com/ip3/wikipedia.org.ico"
+  },
+  {
+    "name": "SoundCloud",
+    "url": "https://soundcloud.com",
+    "logo": "https://icons.duckduckgo.com/ip3/soundcloud.com.ico"
+  },
+  {
+    "name": "Archive",
+    "url": "https://archive.org",
+    "logo": "https://icons.duckduckgo.com/ip3/archive.org.ico"
+  },
+  {
+    "name": "Now.gg",
+    "url": "https://now.gg",
+    "logo": "https://icons.duckduckgo.com/ip3/now.gg.ico"
+  },
+  {
+    "name": "Photopea",
+    "url": "https://www.photopea.com",
+    "logo": "https://icons.duckduckgo.com/ip3/photopea.com.ico"
+  },
+  {
+    "name": "Desmos",
+    "url": "https://www.desmos.com/calculator",
+    "logo": "https://icons.duckduckgo.com/ip3/desmos.com.ico"
+  },
+  {
+    "name": "Netflix",
+    "url": "https://www.netflix.com",
+    "logo": "https://icons.duckduckgo.com/ip3/netflix.com.ico"
+  },
+  {
+    "name": "Scary Teacher",
+    "url": "vendor/games/clscaryteacher3d.html",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGiHFofdux0hhDjkheY8hxqxCQaC0baEnv2ZjLW4-oCg&s"
+  },
+    {
+    "name": "Geometry Dash",
+    "url": "vendor/games/clgeometrydashscratch.html",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStPmruI_hG-7OgndHuCvkQe5qEqbP_cnnezBQj5yQDKA&s=10"
+  },
+      {
+    "name": "Cookie Clicker",
+    "url": "vendor/games/clcookieclicker.html",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_v1u2aRkslPrhdqvnmShPEVstDyrukrQBTUNPc6VXmg&s=10"
+  },
+      {
+    "name": "Baldis Basics",
+    "url": "vendor/games/clbaldisbasics.html",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSaKRg4GSxPu0SiUBCK24Ehmq3zzDhNpoEnB1PvYqzUpw&s=10"
+  },
+        {
+    "name": "1v1.lol",
+    "url": "vendor/games/cl1v1lol.html",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmj3b1PEC5Le7gT93ilODkPfjd3nJ6WzmnooXwaFKV8g&s=10"
+  }
+]

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160">
+  <defs>
+    <radialGradient id="disk" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000"/>
+      <stop offset="35%" stop-color="#1a0500"/>
+      <stop offset="55%" stop-color="#ff6a00"/>
+      <stop offset="75%" stop-color="#ff3b00"/>
+      <stop offset="100%" stop-color="#ffb347"/>
+    </radialGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffb347"/>
+      <stop offset="50%" stop-color="#fff5eb"/>
+      <stop offset="100%" stop-color="#ff6a00"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- event horizon ring -->
+  <circle cx="78" cy="80" r="46" fill="none" stroke="url(#disk)" stroke-width="10" opacity="0.95" filter="url(#glow)"/>
+  <circle cx="78" cy="80" r="28" fill="#000"/>
+  <circle cx="78" cy="80" r="52" fill="none" stroke="#ff8c32" stroke-width="1.5" opacity="0.5"/>
+  <!-- wordmark -->
+  <text x="150" y="98" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="64" font-weight="800" letter-spacing="6" fill="url(#textGrad)" filter="url(#glow)">BLACKHOLE</text>
+</svg>
