@@ -1,0 +1,3 @@
+# Netlify / Cloudflare Pages style
+/service/*  /service-fallback.html  200
+/*  /404.html  404

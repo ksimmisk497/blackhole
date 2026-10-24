@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blackhole</title>
+  <style>
+    body { margin:0; background:#0a0a0f; color:#ccc; font-family: system-ui, sans-serif;
+      display:flex; align-items:center; justify-content:center; min-height:100vh; text-align:center; }
+    h1 { color:#ff7a2f; font-size:18px; margin:0 0 8px; }
+    p { font-size:13px; color:#666; max-width:320px; line-height:1.5; }
+  </style>
+  <script src="/uv/uv.bundle.js"></script>
+  <script src="/uv/uv.config.js"></script>
+  <script src="/register-sw.js"></script>
+</head>
+<body>
+  <div>
+    <h1>Starting proxy…</h1>
+    <p>If this stays here, hard-refresh the main Blackhole tab, then try again.</p>
+  </div>
+  <script>
+    (async function () {
+      try {
+        if (typeof registerSW === "function") await registerSW();
+      } catch (e) {}
+      // Reload so the active SW can intercept this /service/ URL
+      setTimeout(function () { location.reload(); }, 400);
+    })();
+  </script>
+</body>
+</html>

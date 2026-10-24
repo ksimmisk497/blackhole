@@ -6,16 +6,26 @@ async function registerSW() {
     throw new Error("Open via HTTPS, not a local file.");
   }
   if (!navigator.serviceWorker) return;
+
+  // Wait for UV config (bundle + config scripts)
   if (typeof __uv$config === "undefined") {
-    // Wait briefly for uv.config.js
-    await new Promise(function (r) { setTimeout(r, 100); });
-    if (typeof __uv$config === "undefined") return;
+    await new Promise(function (resolve) {
+      var n = 0;
+      var iv = setInterval(function () {
+        n++;
+        if (typeof __uv$config !== "undefined" || n > 80) {
+          clearInterval(iv);
+          resolve();
+        }
+      }, 50);
+    });
   }
+  if (typeof __uv$config === "undefined") return;
   if (__bhSWReady) return __bhSWReady;
 
   __bhSWReady = (async function () {
-    var scope = __uv$config.prefix || "/service/";
-    // Register root uv.js under the UV prefix scope
+    // Scope `/` so the parent page is controlled and iframe /service/* fetches are intercepted
+    var scope = "/";
     var swUrl = new URL("/uv.js", location.href).href + "?v=" + (Date.now() >> 8);
     var reg;
 
@@ -37,6 +47,7 @@ async function registerSW() {
       reg.waiting.postMessage({ type: "SKIP_WAITING" });
     }
 
+    // Wait until active
     if (!reg.active) {
       await Promise.race([
         new Promise(function (resolve) {
@@ -46,21 +57,23 @@ async function registerSW() {
             if (s.state === "activated" || s.state === "redundant") resolve();
           });
         }),
-        new Promise(function (r) { setTimeout(r, 800); })
+        new Promise(function (r) { setTimeout(r, 1500); })
       ]);
     }
 
-    // Ensure controller is ready
+    // Wait for this page to be controlled (critical for first proxy load)
     if (!navigator.serviceWorker.controller) {
       await Promise.race([
         new Promise(function (resolve) {
-          navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+          navigator.serviceWorker.addEventListener("controllerchange", function () {
+            resolve();
+          }, { once: true });
         }),
-        new Promise(function (r) { setTimeout(r, 500); })
+        new Promise(function (r) { setTimeout(r, 1200); })
       ]);
     }
 
-    reg.update().catch(function () {});
+    try { reg.update(); } catch (e) {}
   })();
 
   try {
