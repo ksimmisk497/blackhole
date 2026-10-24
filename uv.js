@@ -1,22 +1,40 @@
-// Blackhole UV Service Worker — scope `/` so iframe navigations are intercepted
+// Blackhole UV Service Worker — GitHub Pages compatible
 "use strict";
 
-var _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 var _barePicked = false;
 
-importScripts("/uv/uv.bundle.js");
-importScripts("/uv/uv.config.js");
-importScripts("/uv/uv.sw.js");
+// Base path from this SW's URL: /repo/uv.js -> /repo/
+var _swPath = self.location.pathname || "/uv.js";
+var _base = _swPath.replace(/\/[^/]*$/, "/");
+if (!_base) _base = "/";
 
-var sw = new UVServiceWorker();
+importScripts(_base + "uv/uv.bundle.js");
+
+self.__uv$config = {
+  prefix: _base + "service/",
+  bare: [
+    "https://wes-prox.ksimmisk497.workers.dev/",
+    "https://tomp.app/"
+  ],
+  encodeUrl: Ultraviolet.codec.xor.encode,
+  decodeUrl: Ultraviolet.codec.xor.decode,
+  handler: _base + "uv/uv.handler.js",
+  client: _base + "uv/uv.client.js",
+  bundle: _base + "uv/uv.bundle.js",
+  config: _base + "uv/uv.config.js",
+  sw: _base + "uv/uv.sw.js",
+  base: _base
+};
+
+importScripts(_base + "uv/uv.sw.js");
+
+var sw = new UVServiceWorker(self.__uv$config);
 
 async function pickBestBare() {
   if (_barePicked) return;
   _barePicked = true;
-  var list = (self.__uv$config && self.__uv$config.bare) || [];
+  var list = self.__uv$config.bare || [];
   if (!Array.isArray(list)) list = [list];
-  if (!list.length) return;
-
   try {
     var winner = await Promise.any(
       list.map(function (url) {
@@ -26,34 +44,23 @@ async function pickBestBare() {
           mode: "cors",
           signal: AbortSignal.timeout(2500)
         }).then(function (r) {
-          if (r.ok || r.status < 500 || r.status === 204) return url;
-          return Promise.reject(new Error("bad"));
+          if (r.ok || r.status === 204 || r.status < 500) return url;
+          return Promise.reject();
         });
       })
     );
-    if (winner && self.__uv$config) {
+    if (winner) {
       self.__uv$config.bare = winner;
       try {
         if (sw) sw.address = winner;
       } catch (e) {}
     }
   } catch (e) {
-    if (self.__uv$config && list[0]) self.__uv$config.bare = list[0];
+    if (list[0]) self.__uv$config.bare = list[0];
   }
 }
 
-async function loadUA() {
-  try {
-    var c = await caches.open("bh-meta");
-    var r = await c.match("/__ua__");
-    if (r) {
-      var t = await r.text();
-      if (t) _UA = t;
-    }
-  } catch (e) {}
-}
-
-self.addEventListener("install", function (e) {
+self.addEventListener("install", function () {
   self.skipWaiting();
 });
 
@@ -61,19 +68,7 @@ self.addEventListener("activate", function (e) {
   e.waitUntil(
     Promise.all([
       self.clients.claim(),
-      loadUA(),
-      pickBestBare(),
-      caches.keys().then(function (keys) {
-        return Promise.all(
-          keys
-            .filter(function (k) {
-              return k !== "bh-meta";
-            })
-            .map(function (k) {
-              return caches.delete(k);
-            })
-        );
-      })
+      pickBestBare()
     ])
   );
 });
@@ -81,18 +76,12 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("message", function (e) {
   try {
     if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
-    if (e.data && (e.data.type === "DIZZY_UA" || e.data.type === "BH_UA") && e.data.ua) {
-      _UA = e.data.ua;
-    }
   } catch (err) {}
 });
 
 self.addEventListener("fetch", function (e) {
-  var prefix = (self.__uv$config && self.__uv$config.prefix) || "/service/";
-  var url = e.request.url;
-
-  // Only handle proxied paths — let normal site assets pass through
-  if (url.indexOf(prefix) === -1) return;
+  var prefix = self.__uv$config.prefix;
+  if (e.request.url.indexOf(prefix) === -1) return;
 
   e.respondWith(
     (async function () {
@@ -101,18 +90,11 @@ self.addEventListener("fetch", function (e) {
         return await sw.fetch(e);
       } catch (err) {
         return new Response(
-          "<!DOCTYPE html><html><head><meta charset=utf-8><title>Proxy error</title></head><body style='background:#0a0a0f;color:#ccc;font-family:sans-serif;padding:40px'>" +
-            "<h2 style='color:#ff7a2f'>Proxy failed</h2>" +
-            "<p>Could not load this site through the proxy.</p>" +
-            "<pre style='color:#888;white-space:pre-wrap'>" +
+          "<!DOCTYPE html><html><body style='background:#0a0a0f;color:#ccc;font-family:sans-serif;padding:40px'>" +
+            "<h2 style='color:#ff7a2f'>Proxy error</h2><p>" +
             String(err && err.message ? err.message : err) +
-            "</pre>" +
-            "<p><a href='/' style='color:#ff7a2f'>Back to Blackhole</a></p>" +
-            "</body></html>",
-          {
-            status: 502,
-            headers: { "content-type": "text/html; charset=utf-8" }
-          }
+            "</p></body></html>",
+          { status: 502, headers: { "content-type": "text/html;charset=utf-8" } }
         );
       }
     })()

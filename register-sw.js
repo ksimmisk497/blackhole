@@ -1,13 +1,40 @@
 "use strict";
 var __bhSWReady = null;
 
+function bhBase() {
+  // Directory of the current page, ending with /
+  try {
+    var path = location.pathname || "/";
+    if (/\.html?$/i.test(path)) {
+      path = path.replace(/\/[^/]+$/, "/");
+    } else if (!path.endsWith("/")) {
+      path = path + "/";
+    }
+    // Prefer path of uv.config.js if present
+    var scripts = document.getElementsByTagName("script");
+    for (var i = 0; i < scripts.length; i++) {
+      var src = scripts[i].getAttribute("src") || "";
+      var m = src.match(/^(.*\/)uv\/uv\.config\.js/i);
+      if (m) {
+        // m[1] is like "uv/" or "/repo/uv/" or "./uv/"
+        var full = scripts[i].src;
+        var u = new URL(full);
+        var dir = u.pathname.replace(/\/uv\/uv\.config\.js$/i, "/");
+        return dir;
+      }
+    }
+    return path;
+  } catch (e) {
+    return "/";
+  }
+}
+
 async function registerSW() {
   if (location.protocol === "file:" || location.origin === "null") {
     throw new Error("Open via HTTPS, not a local file.");
   }
   if (!navigator.serviceWorker) return;
 
-  // Wait for UV config (bundle + config scripts)
   if (typeof __uv$config === "undefined") {
     await new Promise(function (resolve) {
       var n = 0;
@@ -24,9 +51,12 @@ async function registerSW() {
   if (__bhSWReady) return __bhSWReady;
 
   __bhSWReady = (async function () {
-    // Scope `/` so the parent page is controlled and iframe /service/* fetches are intercepted
-    var scope = "/";
-    var swUrl = new URL("/uv.js", location.href).href + "?v=" + (Date.now() >> 8);
+    var base = (__uv$config && __uv$config.base) || bhBase();
+    if (!base.endsWith("/")) base += "/";
+
+    // Scope must cover the whole site so iframe /service/ fetches are intercepted
+    var scope = base;
+    var swUrl = base + "uv.js?v=" + (Date.now() >> 8);
     var reg;
 
     try {
@@ -43,11 +73,8 @@ async function registerSW() {
       });
     }
 
-    if (reg.waiting) {
-      reg.waiting.postMessage({ type: "SKIP_WAITING" });
-    }
+    if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
 
-    // Wait until active
     if (!reg.active) {
       await Promise.race([
         new Promise(function (resolve) {
@@ -61,15 +88,16 @@ async function registerSW() {
       ]);
     }
 
-    // Wait for this page to be controlled (critical for first proxy load)
     if (!navigator.serviceWorker.controller) {
       await Promise.race([
         new Promise(function (resolve) {
-          navigator.serviceWorker.addEventListener("controllerchange", function () {
-            resolve();
-          }, { once: true });
+          navigator.serviceWorker.addEventListener(
+            "controllerchange",
+            resolve,
+            { once: true }
+          );
         }),
-        new Promise(function (r) { setTimeout(r, 1200); })
+        new Promise(function (r) { setTimeout(r, 1000); })
       ]);
     }
 
