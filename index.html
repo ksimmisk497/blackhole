@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Open 15</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open 15 Windows</title>
+    <script>
+        function openMultipleWindows() {
+            for (let i = 0; i < 15; i++) {
+                window.open('https://pornhub.com', '_blank');
+            }
+        }
+    </script>
 </head>
 <body>
-  <button id="go">Open 15 windows</button>
-  <script>
-    document.getElementById("go").onclick = function () {
-      for (var i = 0; i < 15; i++) {
-        window.open(
-          "pornhub.com",
-          "pornhub_" + i,
-          "width=800,height=600"
-        );
-      }
-    };
-  </script>
+
+    <button type="button" onclick="openMultipleWindows()">Open</button>
+
 </body>
 </html>
