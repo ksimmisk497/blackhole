@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Go to Blackhole</title>
+  <meta charset="UTF-8">
+  <title>Open 15</title>
 </head>
 <body>
-    <button id="go">Open Blackhole</button>
-    <script>
-        document.getElementById("go").onclick = function() {
-            for (var i = 0; i < 15; i++) {
-                window.open("pornhub.com", "_blank");
-                    }
-                };
-            </script>
-    </body>
-    </html>
+  <button id="go">Open 15 windows</button>
+  <script>
+    document.getElementById("go").onclick = function () {
+      for (var i = 0; i < 15; i++) {
+        window.open(
+          "pornhub.com",
+          "pornhub_" + i,
+          "width=800,height=600"
+        );
+      }
+    };
+  </script>
+</body>
+</html>
