@@ -8,25 +8,23 @@
   var base = dir.replace(/\/$/, "");
   function join(p) { return base ? base + p : p; }
 
-  // Fast public bare servers — UV picks the first one that responds
-  // Ordered by typical latency; failover is automatic inside uv.sw.js
+  // Working bares first. 429 / dead servers are skipped by uv.js probe.
   var bareServers = [
-    "https://wes-prox.ksimmisk497.workers.dev/",
-    "https://uv.holyubofficial.net/",
-    "https://bare.operand.org/",
-    "https://bareserver.r58playz.dev/"
+    "https://tomp.app/",
+    "https://wes-prox.ksimmisk497.workers.dev/"
   ];
 
   self.__uv$config = {
     prefix: join("/service/"),
-    bare: bareServers[0],       // primary — SW cycles through array on failure
-    bareServers: bareServers,   // full list for failover logic in sw
+    bare: bareServers[0],
+    bareServers: bareServers,
     encodeUrl: Ultraviolet.codec.xor.encode,
     decodeUrl: Ultraviolet.codec.xor.decode,
     handler: join("/uv/uv.handler.js"),
-    bundle:  join("/uv/uv.bundle.js"),
-    config:  join("/uv/uv.config.js"),
-    sw:      join("/uv/uv.sw.js"),
+    client: join("/uv/uv.client.js"),
+    bundle: join("/uv/uv.bundle.js"),
+    config: join("/uv/uv.config.js"),
+    sw: join("/uv/uv.sw.js")
   };
   self.__wpBase = base;
 })();

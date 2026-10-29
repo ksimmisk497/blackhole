@@ -155,7 +155,7 @@ var BrowserTabs = (function() {
       var to = setTimeout(function () {
         timedOut = true;
         finish();
-      }, 700);
+      }, 900);
       ensureSW().then(function () {
         if (!timedOut) {
           clearTimeout(to);
